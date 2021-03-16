@@ -1,7 +1,62 @@
+<?php
+include 'db.php';
+
+//login to the site
+if($_POST){
+
+    $conn = OpenCon();
+
+    $nom = $_POST['nom'];
+    $prenom = $_POST['prenom'];
+    $typeprofile = $_POST['typeprofile'];
+    $email = $_POST['email'];
+    $password1 = $_POST["password"];
+    $password2 = $_POST["password2"];
+
+    //1) verifier si username n'existe pas deja 
+    $sql = "SELECT COUNT(*) from profile where email = $email";
+    $result = $conn -> query($sql);
+
+    if($result > 0){
+
+        echo "email existe deja!";
+    //2)verifier si le mot de passe est le meme
+    }elseif($password1 != $password2){
+
+        echo "mot de passe n'est pas le meme";
+
+    }else{
+        $password = password_hash($_POST['password'], PASSWORD_DEFAULT , ['cost' => 10]);
+
+        $sql = "INSERT INTO profile (nom, prenom, email, motdepasse, typeprofile ) VALUES ('$nom', '$prenom', '$email', '$password','$typeprofile')";
+
+        if ($conn->query($sql) === TRUE) {
+            //naviger a la page d'accueil
+            header("Location: accueilEn.php");
+        } else {
+        echo "Error: " . $sql . "<br>" . $conn->error;
+        }
+
+    }
+
+    CloseCon($conn);
+
+}
+?>
 <!DOCTYPE html>
 <head>
 
-<title>Mes Notes</title>
+<style>
+html,body{
+    background-image: url('./static/images/background.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 100%;
+    font-family: 'Numans', sans-serif;
+}
+</style>
+
+<title>Scolarite</title>
 <!--Importation des fichiers css de Bootstrap-->
 <link rel="stylesheet" href="static/css/bootstrap-grid.css">
 <link rel="stylesheet" href="static/css/bootstrap-grid.min.css">
@@ -37,7 +92,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form action="functions.php" method="POST">
+                    <form action="register.php" method="POST">
                         <div class="input-group form-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-user"></i></span>

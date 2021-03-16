@@ -1,20 +1,9 @@
 <?php
 
-//fuction pour se connecter a la base de donnees
-function OpenCon() {
- $dbhost = "localhost";
- $dbuser = "root";
- $dbpass = "";
- $db = "mesnotes";
- $conn = new mysqli($dbhost, $dbuser, $dbpass,$db) or die("Connect failed: %s\n". $conn -> error);
- 
- return $conn;
-}
- 
-//fonction pour fermer la base de donnees
-function CloseCon($conn){
- $conn -> close();
-}
+// Start the session
+// session_start();
+
+include 'db.php';
 
 //register a new profile
 if(isset($_POST['submitRegiter'])) {
@@ -79,14 +68,88 @@ elseif($_POST["submitLogin"]){
         $nom = $row["nom"];
         $prenom = $row["prenom"];
 
-        echo "welcome  $nom $prenom";
+        // Set session variables pour garder les info de user
+        $_SESSION["nom"] = $nom;
+        $_SESSION["prenom"] = $prenom;
+        $_SESSION["email"] = $email;
+
+        //naviger a la page d'accueil
+        header("Location: accueilEn.php");
+
     }else {
         echo "pas de user";
     }
 
     CloseCon($conn);
 
-}
+}elseif(isset($_POST['submitUpload']) && !empty($_FILES['pdf_file']['name'])){
+    $conn = OpenCon();
+
+        //a $_FILES 'error' value of zero means success. Anything else and something wrong with attached file.
+       if ($_FILES['pdf_file']['error'] != 0) {
+           echo 'Something wrong with the file.';
+       } else { //pdf file uploaded okay.
+           //project_name supplied from the form field
+           $project_name = htmlspecialchars($_POST['project_name']);
+   
+           //attached pdf file information
+           $file_name = $_FILES['pdf_file']['name'];
+           $file_tmp = $_FILES['pdf_file']['tmp_name'];
+           if ($pdf_blob = fopen($file_tmp, "rb")) {
+            $content = fread($pdf_blob, filesize($file_tmp));
+            $content = addslashes($content);
+   
+            $insert_sql = "INSERT INTO documents (idProf, titreDocument, contDocument)
+                            VALUES('777', '$project_name', '$content');";
+
+            if ($conn->query($insert_sql) === TRUE) {
+                echo "New record created successfully";
+                } else {
+                echo "Error: " . $insert_sql . "<br>" . $conn->error;
+                }
+
+            // $stmt = $pdo->prepare($insert_sql);
+            // $stmt->bindParam(':project_name', $project_name);
+            // $stmt->bindParam(':pdf_doc', $pdf_blob, PDO::PARAM_LOB);
+
+
+
+           } else {
+               //fopen() was not successful in opening the .pdf file for reading.
+               echo 'Could not open the attached pdf file';
+           }
+       }
+   } elseif ($_POST["submitDownload"]) {
+       
+    $conn = OpenCon();
+    $idDoc = $_POST["idDoc"];
+
+    echo "helloooooo" . $idDoc;
+    
+    $sql = "SELECT titreDocument, contDocument from documents WHERE idDocument = '$idDoc'";
+
+    $result = $conn -> query($sql);
+    
+    $row = $result -> fetch_assoc();
+    
+    $file = $row["titreDocument"];
+    $content = $row["contDocument"];
+
+
+    header('Content-type: application/pdf');
+    header("Cache-Control: no-cache");
+    header("Pragma: no-cache");
+    header("Content-Disposition: inline;filename='". $file .".pdf'");
+    header("Content-length: ".strlen($content));
+    echo $content;
+    exit();
+
+
+
+    CloseCon($conn);
+
+
+   }
 
    
 ?>

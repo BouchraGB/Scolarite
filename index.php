@@ -1,7 +1,22 @@
+<?php
+// Start the session
+session_start();
+?>
+
+
 <!DOCTYPE html>
+<style>
+html,body{
+    background-image: url('./static/images/background.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    height: 100%;
+    font-family: 'Numans', sans-serif;
+}
+</style>
 <head>
 
-<title>Mes Notes</title>
+<title>Scolarite</title>
 <!--Importation des fichiers css de Bootstrap-->
 <link rel="stylesheet" href="static/css/bootstrap-grid.css">
 <link rel="stylesheet" href="static/css/bootstrap-grid.min.css">
@@ -38,7 +53,7 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    <form method="POST" action="functions.php">
+                    <form method="POST" action="index.php">
                         <div class="input-group form-group">
                             <div class="input-group-prepend">
                                 <span class="input-group-text"><i class="fas fa-envelope"></i></span>
@@ -62,7 +77,7 @@
                 </div>
                 <div class="card-footer">
                     <div class="d-flex justify-content-center links">
-                        Don't have an account?<a href="register.html">Sign Up</a>
+                        Don't have an account?<a href="register.php">Sign Up</a>
                     </div>
                     <div class="d-flex justify-content-center">
                         <a href="#">Forgot your password?</a>
@@ -74,3 +89,57 @@
 
 </body>
 </html>
+
+<?php
+include 'db.php';
+
+//login to the site
+if($_POST){
+    $conn = OpenCon();
+
+    $email = $_POST["email"];
+    $password = $_POST['motdepasse'];
+    //echo $email;
+    //$password = password_hash($_POST['motdepasse'], PASSWORD_DEFAULT , ['cost' => 15]);
+
+    $sql = "SELECT * from profile WHERE email = '$email' ";
+
+    $result = $conn -> query($sql);
+ 
+
+    if($result->num_rows > 0){
+
+        while($row = $result->fetch_assoc()){
+            $mdp = $row["motdepasse"];
+            if(password_verify($password, $mdp)){
+                $sql2 = "SELECT idProfile, nom, prenom from profile WHERE email = '$email' ";
+
+                $result2 = $conn -> query($sql2);
+        
+                $row = $result2->fetch_assoc();
+                $nom = $row["nom"];
+                $prenom = $row["prenom"];
+                $id = $row["idProfile"];
+        
+                // Set session variables pour garder les info de user
+                $_SESSION["id"] = $id;
+                $_SESSION["nom"] = $nom;
+                $_SESSION["prenom"] = $prenom;
+                $_SESSION["email"] = $email;
+        
+                //naviger a la page d'accueil
+                header("Location: accueilEn.php");
+            }else{
+                echo "mdp non valide !";
+            }
+    
+        }
+
+    }else {
+        echo "pas de user".$password;
+    }
+
+    CloseCon($conn);
+
+}
+?>
